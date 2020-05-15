@@ -12,3 +12,5 @@ src/com/bn/AwsCredentials.properties
 src/com/bn/DB.properties
 target/classes/com/bn/DB.properties
 DB.properties
+target/classes/com/bn/AwsCredentials.properties
+target/classes/com/bn/DAO.class
