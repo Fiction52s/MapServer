@@ -140,7 +140,7 @@ public class DAO {
 			
 			Class.forName(driver);
 			
-			System.out.println( "driver: " + driver + ", url: " + url + ", user: " + username + ", pass: " + password );
+			//System.out.println( "driver: " + driver + ", url: " + url + ", user: " + username + ", pass: " + password );
 			
 			Connection tempConn = DriverManager.getConnection(url, username, password );
 			System.out.println( "Connected");
@@ -152,11 +152,38 @@ public class DAO {
 		return null;
 	}
 	
+	public boolean checkExistence( int id )
+	{
+		try
+		{
+			//SELECT COUNT(id) FROM table WHERE id = 123
+			PreparedStatement sel = conn.prepareStatement(
+					"SELECT COUNT(id) FROM maps WHERE id = " + id );
+			
+			ResultSet rs = sel.executeQuery();
+			rs.next();
+			if( rs.getInt("COUNT(id)") == 1 )
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		catch( SQLException e )
+		{
+			System.out.println(e);
+		}
+		
+		return false;
+	}
+	
 	public List<Map> listAllMaps()
 	{
 		List<Map> maps = new ArrayList<>();
 		try
-		{
+		{			
 			PreparedStatement sel = conn.prepareStatement(
 					"SELECT * FROM maps" );
 			ResultSet rs = sel.executeQuery();
@@ -198,10 +225,9 @@ public class DAO {
 	}
 	
 	//return a result later
-	public void deleteMap( Map m )
+	public boolean deleteMap( int id )
 	{
-		String statementStr = "delete from maps where mapname=\"" + m.getName() 
-		+ "\" and creatorname=\"" + m.getCreatorName() + "\"";
+		String statementStr = "delete from maps where id=" + id;
 		
 		//System.out.println( "attempting to delete map " + m.getName() + " from user " + m.getCreatorName());
 		try
@@ -216,11 +242,14 @@ public class DAO {
 			else
 			{
 				System.out.println( "map deleted.");	
+				return true;
 			}
 		}
 		catch( SQLException e )
 		{
 			System.out.println( e );
 		}
+		
+		return false;
 	}
 }

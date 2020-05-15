@@ -1,5 +1,6 @@
 package com.bn;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -83,24 +84,37 @@ public class MapResource {
 			map.setCreatorName(username);
 			System.out.println( "inserting map: " + map.getName() + " by user: " + map.getCreatorName());
 			dao.insertMap(map);
+			return Response.ok().build();
 		}
 		else
 		{
 			System.out.println( "tried to upload map " + map.getName() + " as invalid user");
+			return Response.notModified().build();
 		}
 		
-		
+		//Response response = new Response();
 		//int newProductId = dao.add( map );
-		//URI uri = new URI("/MyWebsite/rest/products/" + newProductId );
+		//URI uri = new URI("/MyWebsite/rest/products/" + 0 );
+		
 		//return Response.created(uri).build();
-		return Response.ok().build();
+		//return Response.ok().build();
 	}
 	
 	@GET
 	@Path( "{id}")
 	public Response get( @PathParam("id") int id )
 	{
-		return Response.status( Response.Status.NOT_FOUND).build();
+		boolean exists = dao.checkExistence(id);
+		if( exists )
+		{
+			return Response.ok().build();
+		}
+		else
+		{
+			return Response.status( Response.Status.NOT_FOUND).build();	
+		}
+		
+		
 //		Product product = dao.get(id);
 //		if( product != null )
 //		{
@@ -132,23 +146,25 @@ public class MapResource {
 	
 	
 	@DELETE
-	@Consumes(MediaType.APPLICATION_JSON)
-	//@Path("{id}")
-	public Response delete( @Context HttpHeaders headers, Map map )
+	//@Consumes(MediaType.APPLICATION_JSON)
+	@Path("{id}")
+	public Response delete( @Context HttpHeaders headers, @PathParam("id") int id )
 	{
 		String username = getVerifiedUsername( headers );
 		
 		if( username != null )
 		{
-			map.setCreatorName(username);
-			System.out.println( "attempting to deleting map: " + map.getName() + " by user: " + map.getCreatorName());
-			dao.deleteMap(map);
-			return Response.ok().build();
+			System.out.println( "attempting to deleting map with id: " + id );
+			boolean res = dao.deleteMap(id);
+			
+			if( res )
+			{
+				return Response.ok().build();	
+			}			
 		}
 		else
 		{
-			System.out.println( "tried to upload map as invalid user");
-			
+			System.out.println( "tried to delete map as invalid user");
 		}
 		
 		return Response.notModified().build();
