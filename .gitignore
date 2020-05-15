@@ -1,0 +1,14 @@
+
+*.prefs
+*.prefs
+*.prefs
+.classpath
+.project
+src/com/bn/DB.properties
+.classpath
+.classpath
+.settings/org.eclipse.jdt.core.prefs
+src/com/bn/AwsCredentials.properties
+src/com/bn/DB.properties
+target/classes/com/bn/DB.properties
+DB.properties
