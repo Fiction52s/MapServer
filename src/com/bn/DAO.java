@@ -187,6 +187,30 @@ public class DAO {
 		return null;
 	}
 	
+	public Map getMap( String mapName, String creatorName )
+	{
+		try
+		{
+			//SELECT COUNT(id) FROM table WHERE id = 123
+			PreparedStatement sel = conn.prepareStatement(
+					"SELECT * FROM maps WHERE mapname = \"" + mapName + "\" AND creatorname = \"" + creatorName + "\"" );
+			
+			ResultSet rs = sel.executeQuery();
+			
+			if( rs.next() )
+			{
+				Map m = new Map( rs.getInt("id"), rs.getString("mapname"), rs.getString("creatorname"));
+				return m;
+			}
+		}
+		catch( SQLException e )
+		{
+			System.out.println(e);
+		}
+		
+		return null;
+	}
+	
 	public List<Map> listAllMaps()
 	{
 		List<Map> maps = new ArrayList<>();
@@ -213,21 +237,28 @@ public class DAO {
 		return maps;
 	}
 	
-	public void insertMap( Map m )
+	public boolean insertMap( Map m )
 	{
-		String statementStr = "insert into maps ( mapname, creatorname ) values (\"" + m.getName() 
-		+ "\",\"" + m.getCreatorName() + "\")";
-		
-		try
+		Map searchedMap = getMap( m.getName(), m.getCreatorName() );
+		if( searchedMap == null )
 		{
-			PreparedStatement ins = conn.prepareStatement(statementStr);
-			ins.executeUpdate();
-		}
-		catch( SQLException e )
-		{
-			System.out.println( e );
+			String statementStr = "insert into maps ( mapname, creatorname ) values (\"" + m.getName() 
+			+ "\",\"" + m.getCreatorName() + "\")";
+			
+			try
+			{
+				PreparedStatement ins = conn.prepareStatement(statementStr);
+				ins.executeUpdate();
+				return true;
+			}
+			catch( SQLException e )
+			{
+				System.out.println( e );
+			}
+			
 		}
 		
+		return false;
 		//"insert into maps ( mapname, creatorname ) values ("testmap", "test" )"
 	}
 	

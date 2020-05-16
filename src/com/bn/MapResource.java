@@ -83,13 +83,23 @@ public class MapResource {
 		{
 			map.setCreatorName(username);
 			System.out.println( "inserting map: " + map.getName() + " by user: " + map.getCreatorName());
-			dao.insertMap(map);
-			return Response.ok().build();
+			boolean insertSuccess = dao.insertMap(map);
+			
+			if( insertSuccess )
+			{
+				return Response.ok().build();
+			}
+			else
+			{
+				//already exists, dont add it.
+				return Response.status(302).build();	
+			}
+			
 		}
 		else
 		{
 			System.out.println( "tried to upload map " + map.getName() + " as invalid user");
-			return Response.notModified().build();
+			return Response.status(403).build();
 		}
 		
 		//Response response = new Response();
