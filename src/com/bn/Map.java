@@ -44,7 +44,7 @@ public class Map {
 	
 	public String createKey()
 	{
-		return creatorName + "/" + name;
+		return creatorName + "/" + name + ".brknk";
 	}
 	
 	

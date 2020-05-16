@@ -21,40 +21,31 @@ import com.amazonaws.services.cognitoidp.model.GetUserRequest;
 import com.amazonaws.services.cognitoidp.model.GetUserResult;
 import com.amazonaws.services.cognitoidp.model.NotAuthorizedException;
 import com.amazonaws.services.s3.AmazonS3;
-//import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 
 public class DAO {
 
 	private static DAO instance;
+	
 	private static Connection conn;
-	//private static String USER_POOL_ID;
+	
+	private static ClasspathPropertiesFileCredentialsProvider creds;
+	
 	private static AWSCognitoIdentityProvider cognitoClient;
+	
 	private static AmazonS3 s3;
 	private static String bucketName = "breakneckmaps";
-	private static ClasspathPropertiesFileCredentialsProvider creds;
+	
 	
 	static
 	{
-		//data.add( new Product( 1, "iPHone X", 999.99f));
-		//data.add( new Product( 2, "XBOX 360", 329.50f));
+		connectToDatabase();
 		
-		connect();
+		loadAWSCreds();
 		
-		setupCreds();
-		
-		//USER_POOL_ID = "us-east-1_6v9AExXS8";
 		cognitoClient = getAmazonCognitoIdentityClient();
-		
-		//VerifyUser();
-		System.out.println("here we go");
-		
 		s3 = getAmazonS3();
-		
-		
-		//AWSCognitoIdentityProvider cognitoClient = getAmazonCognitoIdentityClient();
-		
 	}
 	
 	public static DAO getInstance()
@@ -69,7 +60,7 @@ public class DAO {
 	
 	private DAO() {}
 	
-	private static void setupCreds()
+	private static void loadAWSCreds()
 	{
 		creds = new ClasspathPropertiesFileCredentialsProvider();
 	}
@@ -102,13 +93,12 @@ public class DAO {
 		catch( NotAuthorizedException e )
 		{
 			System.out.println( "get user request failed" );
-			//System.out.println( e );
 		}
 		
 		return null;
 	}
 	
-	private static void connect()
+	private static void connectToDatabase()
 	{
 		try
 		{
@@ -248,6 +238,7 @@ public class DAO {
 		{
 			String key = m.createKey();
 			
+			System.out.println( "key is: " + key );
 			DeleteObjectRequest deleteReq = new DeleteObjectRequest(bucketName, key);
 			boolean deleteSuccess = false;
 			try
