@@ -104,8 +104,8 @@ public class MapResource {
 	@Path( "{id}")
 	public Response get( @PathParam("id") int id )
 	{
-		boolean exists = dao.checkExistence(id);
-		if( exists )
+		Map exists = dao.getMap(id);
+		if( exists != null )
 		{
 			return Response.ok().build();
 		}

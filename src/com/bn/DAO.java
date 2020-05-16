@@ -14,19 +14,26 @@ import java.util.List;
 import java.util.Properties;
 
 import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cognitoidp.AWSCognitoIdentityProvider;
 import com.amazonaws.services.cognitoidp.AWSCognitoIdentityProviderClientBuilder;
 import com.amazonaws.services.cognitoidp.model.GetUserRequest;
 import com.amazonaws.services.cognitoidp.model.GetUserResult;
 import com.amazonaws.services.cognitoidp.model.NotAuthorizedException;
+import com.amazonaws.services.s3.AmazonS3;
+//import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
 
 public class DAO {
 
 	private static DAO instance;
 	private static Connection conn;
-	private static String USER_POOL_ID;
+	//private static String USER_POOL_ID;
 	private static AWSCognitoIdentityProvider cognitoClient;
-	//private static AmazonS3Client s3Client;
+	private static AmazonS3 s3;
+	private static String bucketName = "breakneckmaps";
+	private static ClasspathPropertiesFileCredentialsProvider creds;
 	
 	static
 	{
@@ -35,11 +42,16 @@ public class DAO {
 		
 		connect();
 		
-		USER_POOL_ID = "us-east-1_6v9AExXS8";
+		setupCreds();
+		
+		//USER_POOL_ID = "us-east-1_6v9AExXS8";
 		cognitoClient = getAmazonCognitoIdentityClient();
 		
 		//VerifyUser();
 		System.out.println("here we go");
+		
+		s3 = getAmazonS3();
+		
 		
 		//AWSCognitoIdentityProvider cognitoClient = getAmazonCognitoIdentityClient();
 		
@@ -57,11 +69,20 @@ public class DAO {
 	
 	private DAO() {}
 	
+	private static void setupCreds()
+	{
+		creds = new ClasspathPropertiesFileCredentialsProvider();
+	}
+	
+	private static AmazonS3 getAmazonS3()
+	{
+		return AmazonS3ClientBuilder.standard().withRegion(Regions.US_EAST_1)
+		.withCredentials(creds).build();
+	}
+	
 	private static AWSCognitoIdentityProvider getAmazonCognitoIdentityClient() {
-	      ClasspathPropertiesFileCredentialsProvider propertiesFileCredentialsProvider = 
-	           new ClasspathPropertiesFileCredentialsProvider();
 	       return AWSCognitoIdentityProviderClientBuilder.standard()
-	                      .withCredentials(propertiesFileCredentialsProvider)
+	                      .withCredentials(creds)
 	                             .withRegion("us-east-1")
 	                             .build();
 	   }
@@ -152,23 +173,20 @@ public class DAO {
 		return null;
 	}
 	
-	public boolean checkExistence( int id )
+	public Map getMap( int id )
 	{
 		try
 		{
 			//SELECT COUNT(id) FROM table WHERE id = 123
 			PreparedStatement sel = conn.prepareStatement(
-					"SELECT COUNT(id) FROM maps WHERE id = " + id );
+					"SELECT * FROM maps WHERE id = " + id );
 			
 			ResultSet rs = sel.executeQuery();
-			rs.next();
-			if( rs.getInt("COUNT(id)") == 1 )
+			
+			if( rs.next() )
 			{
-				return true;
-			}
-			else
-			{
-				return false;
+				Map m = new Map( rs.getInt("id"), rs.getString("mapname"), rs.getString("creatorname"));
+				return m;
 			}
 		}
 		catch( SQLException e )
@@ -176,7 +194,7 @@ public class DAO {
 			System.out.println(e);
 		}
 		
-		return false;
+		return null;
 	}
 	
 	public List<Map> listAllMaps()
@@ -214,7 +232,6 @@ public class DAO {
 		{
 			PreparedStatement ins = conn.prepareStatement(statementStr);
 			ins.executeUpdate();
-			
 		}
 		catch( SQLException e )
 		{
@@ -224,30 +241,46 @@ public class DAO {
 		//"insert into maps ( mapname, creatorname ) values ("testmap", "test" )"
 	}
 	
-	//return a result later
 	public boolean deleteMap( int id )
 	{
-		String statementStr = "delete from maps where id=" + id;
-		
-		//System.out.println( "attempting to delete map " + m.getName() + " from user " + m.getCreatorName());
-		try
+		Map m = getMap( id );
+		if( m != null )
 		{
-			PreparedStatement ins = conn.prepareStatement(statementStr);
-			int res = ins.executeUpdate();
+			String key = m.createKey();
 			
-			if( res == 0 )
+			DeleteObjectRequest deleteReq = new DeleteObjectRequest(bucketName, key);
+			boolean deleteSuccess = false;
+			try
 			{
-				System.out.println( "map was not found.");	
+				s3.deleteObject(deleteReq);
+				deleteSuccess = true;
 			}
-			else
+			catch( Exception e )
 			{
-				System.out.println( "map deleted.");	
-				return true;
+				System.out.println( "deletetion failed (S3) and threw an exception");
+				System.out.println( e );
+			}
+			
+			if( deleteSuccess )
+			{
+				String statementStr = "delete from maps where id=" + id;
+				try
+				{
+					PreparedStatement ins = conn.prepareStatement(statementStr);
+					ins.executeUpdate();
+					System.out.println( "map deleted.");
+					return true;
+				}
+				catch( SQLException e )
+				{
+					System.out.println( "deletetion failed on the db and threw an exception");
+					System.out.println( e );
+				}
 			}
 		}
-		catch( SQLException e )
+		else
 		{
-			System.out.println( e );
+			System.out.println( "map was not found.");	
 		}
 		
 		return false;

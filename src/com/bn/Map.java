@@ -42,5 +42,10 @@ public class Map {
 		this.creatorName = creatorName;
 	}
 	
+	public String createKey()
+	{
+		return creatorName + "/" + name;
+	}
+	
 	
 }
